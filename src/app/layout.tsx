@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description: "A developer-centric task manager",
   icons: {
     icon: "/favicon.ico",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 

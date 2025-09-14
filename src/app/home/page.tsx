@@ -1,77 +1,73 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import Link from "next/link";
-
-type Board = {
-  id: string;
-  title: string;
-};
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
-  const { data: session } = useSession();
-  const [boards, setBoards] = useState<Board[]>([]);
-  const [newBoard, setNewBoard] = useState("");
+  const [boards, setBoards] = useState<any[]>([]); // store boards
+  const [newBoardTitle, setNewBoardTitle] = useState(""); // store input text
 
+  // Fetch boards on load
   useEffect(() => {
-    if (session) {
-      fetch("/api/boards")
-        .then((res) => res.json())
-        .then((data) => setBoards(data));
-    }
-  }, [session]);
+    const fetchBoards = async () => {
+      const res = await fetch("/api/boards");
+      if (res.ok) {
+        const data = await res.json();
+        setBoards(data);
+      }
+    };
+    fetchBoards();
+  }, []);
 
+  // Create board
   async function createBoard() {
-    if (!newBoard.trim()) return;
+    if (!newBoardTitle.trim()) return;
+
     const res = await fetch("/api/boards", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newBoard }),
+      body: JSON.stringify({ title: newBoardTitle }),
     });
-    const board = await res.json();
-    setBoards([board, ...boards]);
-    setNewBoard("");
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("Create board failed:", err);
+      return;
+    }
+
+    const data = await res.json();
+    setBoards([...boards, data]);
+    setNewBoardTitle("");
   }
 
-  if (!session) return <p>Loading...</p>;
-
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Welcome, {session.user?.name}</h1>
-      <button
-        onClick={() => signOut()}
-        className="px-3 py-2 bg-gray-200 rounded-md mb-4"
-      >
-        Sign Out
-      </button>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Your Boards</h1>
+
+      {/* Create board input */}
       <div className="flex gap-2 mb-4">
         <input
           type="text"
-          value={newBoard}
-          onChange={(e) => setNewBoard(e.target.value)}
+          value={newBoardTitle}
+          onChange={(e) => setNewBoardTitle(e.target.value)}
           placeholder="New board title"
-          className="border px-3 py-2 rounded-md"
+          className="border px-3 py-2 rounded w-full"
         />
         <button
           onClick={createBoard}
-          className="px-3 py-2 bg-blue-600 text-white rounded-md"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
-          Create Board
+          Create
         </button>
       </div>
+
+      {/* Show boards */}
       <ul className="space-y-2">
         {boards.map((board) => (
-          <li key={board.id} className="p-3 border rounded-md">
-            <Link
-              href={`/board/${board.id}`}
-              className="text-blue-600 hover:underline"
-            >
-              {board.title}
-            </Link>
+          <li key={board.id} className="p-3 border rounded">
+            {board.title}
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   );
 }

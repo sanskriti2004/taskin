@@ -1,26 +1,18 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET,
-  callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Always redirect to /home after login
-      return "/home";
-    },
-    async session({ session, token }) {
-      // Add GitHub username or ID to session
-      if (session.user) {
-        session.user.id = token.sub;
-      }
-      return session;
-    },
+  session: {
+    strategy: "jwt", // or "database" if you want session persistence in Postgres
   },
 };
 
